@@ -1,0 +1,29 @@
+name: verify health check wiring
+
+on:
+  push:
+    branches: [verify-health-check]
+
+permissions:
+  contents: read
+
+jobs:
+  mock:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - id: health
+        uses: pantheongpu/gpu-health-check@1913a4746f390e2ae8849173c127954e154d9e5e # v0.1.1
+        with:
+          platform: mock
+          duration: 5
+          upload-report: 'false'
+      - run: |
+          echo "verdict=${{ steps.health.outputs.verdict }} platform=${{ steps.health.outputs.platform }} dir=${{ steps.health.outputs.report-dir }}"
+          ls -la "${{ steps.health.outputs.report-dir }}"
+      - if: always() && steps.health.outputs.report-dir != ''
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: gpu-health-mock
+          path: ${{ steps.health.outputs.report-dir }}/*.json
+          if-no-files-found: ignore
